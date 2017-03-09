@@ -1,9 +1,13 @@
 library(shiny)
 
 shinyUI(pageWithSidebar(
-  headerPanel('NBA Shiny App Project'),
+  headerPanel(h1('NBA Shiny App Project', align='center')),
   sidebarPanel(
-    h1('Teams')
+    h3('Choose Distance Types'), 
+    selectInput('distance',
+                label='Choose the distance to see associated shot %',
+                choices= c('< 8ft', '8-16ft', '16-24ft', '> 24ft')
+                )
   ),
   mainPanel(
     plotOutput("plot")

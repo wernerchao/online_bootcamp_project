@@ -1,15 +1,52 @@
 # Compare teams got into playoff vs. didn’t make into playoff:
   # Plot of Stats vs. Season:
-    # Do they take more shots > 8 ft.?
-    # Do they make more shots > 8 ft.?
-    # What is their avg. shot dist.?
-    # What is their avg. made shot dist.?
+    # Seasonal shot distance % for winning team vs. losing team
+  # Win% vs. Shot Distance
+
 
 library(dplyr)
 library(ggplot2)
 library(reshape2)
-shooting_data = read.csv('../data/shot_distance_stats.csv')
+shooting_data = read.csv('data/shot_distance_stats.csv')
 shooting_data['pf_or_not'] = 'No'
+
+
+# win_data = read.csv('data/win_stats.csv')
+# shooting_data['W'] = 0
+# shooting_data['L'] = 0
+# shooting_data['WIN.'] = 0
+# 
+# # Join win/loss from win_data to shooting_data
+# for (season in levels(win_data$Season)) {
+#   for (team in levels(win_data$TEAM)) {
+#     shooting_data[shooting_data$Season == season & shooting_data$Team == team, ]['W'] = 
+#       win_data[win_data$Season == season & win_data$TEAM == team, ]['W']
+#     
+#     shooting_data[shooting_data$Season == season & shooting_data$Team == team, ]['L'] = 
+#       win_data[win_data$Season == season & win_data$TEAM == team, ]['L']
+#     
+#     shooting_data[shooting_data$Season == season & shooting_data$Team == team, ]['WIN.'] = 
+#       win_data[win_data$Season == season & win_data$TEAM == team, ]['WIN.']
+#   }
+# }
+# 
+# # Remove playoff rows for now.
+# shooting_data <- shooting_data[!(shooting_data$Season.Type=="POFF"), ]
+# ggplot(shooting_data[shooting_data$Season == '2015-2016' 
+#                      | shooting_data$Season == '2014-2015'
+#                      | shooting_data$Season == '2013-2014', ], aes(WIN., Less.than.8ft..usage..)) + geom_point()
+# 
+# ggplot(shooting_data[shooting_data$Season == '2015-2016', ], aes(X8.16.feet.usage.., WIN.)) + geom_point()
+# ggplot(shooting_data[shooting_data$Season == '2015-2016', ], aes(WIN., X16.24.feet.usage..)) + geom_point()
+# 
+# ggplot(shooting_data[shooting_data$Season == '2015-2016' 
+#                      | shooting_data$Season == '2014-2015'
+#                      | shooting_data$Season == '2013-2014', ], aes(WIN., X24..feet.usage..)) + geom_point()
+# 
+# ggplot(shooting_data, aes(WIN., Avg..Shot.Dis..ft..)) + geom_point()
+# ggplot(shooting_data, aes(WIN., Avg..Made.Shot.Dis..ft..)) + geom_point()
+
+
 
 # Teams got into playoff
 for (season in levels(shooting_data$Season)) {
@@ -27,47 +64,39 @@ reg_non_teams = shooting_data[shooting_data$pf_or_not == 'No' &
 
 reg_teams_compare = data.frame(reg_pf_teams %>% 
                                  group_by(Season) %>% 
-                                 summarise(mean_8ft=mean(Less.than.8ft..usage..)), 
+                                 summarise(pf_mean_0ft=mean(Less.than.8ft..usage..), 
+                                           pf_mean_8ft=mean(X8.16.feet.usage..), 
+                                           pf_mean_16ft=mean(X16.24.feet.usage..),
+                                           pf_mean_24ft=mean(X24..feet.usage..)), 
                                reg_non_teams %>% 
                                  group_by(Season) %>% 
-                                 summarise(mean_8ft=mean(Less.than.8ft..usage..))
+                                 summarise(non_mean_0ft=mean(Less.than.8ft..usage..), 
+                                           non_mean_8ft=mean(X8.16.feet.usage..), 
+                                           non_mean_16ft=mean(X16.24.feet.usage..),
+                                           non_mean_24ft=mean(X24..feet.usage..))
                                )
-head(reg_teams_compare)
-  
-plot(reg_teams_compare$mean_8ft, type='line', ylim=c(39.0, 44.0), 
-     col='red', xlab='Season', ylab='< 8 ft shot %')
-lines(reg_teams_compare$mean_8ft.1, col='green')
-
-
-
-
-
-
 
 
 
 shinyServer(function(input, output) {
   output$plot <- renderPlot({
-    plot(c(2005, 2016), c(37.0, 44.0), type='n', ylim=c(39.0, 44.0), 
-         xlab='Season', ylab='< 8 ft shot %', main='Shot Distance % (< 8 ft)')
-    lines(seq(2005, 2016), reg_teams_compare$mean_8ft, col='red', lwd=2.5)
-    lines(seq(2005, 2016), reg_teams_compare$mean_8ft.1, col='green', lwd=2.5)
+    data = switch(input$distance,
+                  '< 8ft' = data.frame(reg_teams_compare$pf_mean_0ft, reg_teams_compare$non_mean_0ft), 
+                  '8-16ft' = data.frame(reg_teams_compare$pf_mean_8ft, reg_teams_compare$non_mean_8ft),
+                  '16-24ft' = data.frame(reg_teams_compare$pf_mean_16ft, reg_teams_compare$non_mean_16ft),
+                  '> 24ft' = data.frame(reg_teams_compare$pf_mean_24ft, reg_teams_compare$non_mean_24ft)
+                  )
+
+    plot(c(2005, 2016), c(min(data[, 1])-1.5, max(data[, 1])+1.5), type='n', 
+         xlab='Season', ylab=paste(input$distance, ' shot %'), main=paste('Shot % (Distance ', input$distance, ')'))
+    lines(seq(2005, 2016), data[, 1], col='red', lwd=2.5)
+    lines(seq(2005, 2016), data[, 2], col='green', lwd=2.5)
     legend('bottomright', 
            c('Win Teams', 'Lose Teams'), 
            lty=c(1, 1), 
            lwd=c(2, 2), 
            col=c('red', 'green'))
     
-    
-    # teams_15_16 = shooting_data[
-    #   shooting_data$Season.Type == 'REG' & 
-    #     shooting_data$Season == '2015-2016', ]
-    # ggplot(data=teams_15_16, aes(pf_or_not, mean(Less.than.8ft..usage..))) + geom_point()
-    # ggplot(data=teams_15_16, aes(pf_or_not, X8.16.feet.usage..)) + geom_point()
-    # ggplot(data=teams_15_16, aes(pf_or_not, X16.24.feet.usage..)) + geom_point()
-    # ggplot(data=teams_15_16, aes(pf_or_not, Avg..Shot.Dis..ft..)) + geom_point()
-    # ggplot(data=teams_15_16, aes(pf_or_not, Avg..Made.Shot.Dis..ft..)) + geom_point()
-    # ggplot(data=teams_15_16, aes(pf_or_not, Avg..Missed.Shot.Dis..ft..)) + geom_point()
   })
 
 })
