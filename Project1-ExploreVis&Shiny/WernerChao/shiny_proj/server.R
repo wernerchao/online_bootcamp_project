@@ -28,37 +28,166 @@ reg_teams_compare = data.frame(reg_pf_teams %>%
                                  summarise(pf_mean_0ft=mean(Less.than.8ft..usage..), 
                                            pf_mean_8ft=mean(X8.16.feet.usage..), 
                                            pf_mean_16ft=mean(X16.24.feet.usage..),
-                                           pf_mean_24ft=mean(X24..feet.usage..)), 
+                                           pf_mean_24ft=mean(X24..feet.usage..), 
+                                           pf_mean_shot_dist=mean(Avg..Shot.Dis..ft..)), 
                                reg_non_teams %>% 
                                  group_by(Season) %>% 
                                  summarise(non_mean_0ft=mean(Less.than.8ft..usage..), 
                                            non_mean_8ft=mean(X8.16.feet.usage..), 
                                            non_mean_16ft=mean(X16.24.feet.usage..),
-                                           non_mean_24ft=mean(X24..feet.usage..))
+                                           non_mean_24ft=mean(X24..feet.usage..), 
+                                           non_mean_shot_dist=mean(Avg..Shot.Dis..ft..))
 )
 
+### TEMP: Average Shot Distance Plot
+plot(c(2005, 2016), c(min(reg_teams_compare$pf_mean_shot_dist), max(reg_teams_compare$pf_mean_shot_dist)), type='n',
+     xlab='Season', ylab=paste('Avg Shot Distance'), main=paste('Seasonal Average Shot Distance'))
+lines(seq(2005, 2016), reg_teams_compare$pf_mean_shot_dist, col='red', lwd=2.5)
+lines(seq(2005, 2016), reg_teams_compare$non_mean_shot_dist, col='green', lwd=2.5)
+legend('topleft',
+       c('Win Teams', 'Lose Teams'),
+       lty=c(1, 1),
+       lwd=c(2, 2),
+       col=c('red', 'green'))
+
+
+### TEMP: Offensive Rating vs. Win %
+# ggplot()
+
+
+### TEMP: Off Rating vs. Shot Distance Usage
+print((lm(rating_data$OFFRTG ~ rating_data$Less.than.8ft..usage..)))
+print((lm(rating_data$OFFRTG ~ rating_data$X8.16.feet.usage..)))
+print((lm(rating_data$OFFRTG ~ rating_data$X16.24.feet.usage..)))
+print((lm(rating_data$OFFRTG ~ rating_data$X24..feet.usage..)))
+
+lm_eqn <- function(x, y) {
+  m <- lm(y ~ x);
+  eq <- substitute(italic(y) == a + b %.% italic(x), 
+                   list(a = format(coef(m)[1], digits = 2), 
+                        b = format(coef(m)[2], digits = 2)))
+  as.character(as.expression(eq));                 
+}
+
+x_val = rating_data$Less.than.8ft..usage.. # Change this value for other plots.
+x_lab = '< 8 ft' # Change this too.
+x_pos = max(x_val) - 0.1*max(x_val)
+y_pos = min(rating_data$OFFRTG) + 2.5
+ggplot(rating_data, aes(x_val, OFFRTG)) +
+  geom_point() +
+  xlab(x_lab) +
+  ggtitle(paste('Offensive Rating vs.', x_lab, ' Shot Usage %')) +
+  theme(plot.title = element_text(size=16, lineheight=.8, face="bold", hjust=0.5)) +
+  geom_smooth(method = 'glm', se = TRUE) + 
+  geom_text(x = x_pos, y = y_pos, size=8, color='red', label = lm_eqn(x_val, rating_data$OFFRTG), parse = TRUE)
+
+
+### TEMP: More Advanced Plots - Shot Usage Ratio vs. Offensive Rating
+### Plot Shot Comb Ratio vs Offensive Rating
+x_val = rating_data$X24..feet.usage../rating_data$Less.than.8ft..usage.. # Change this value for other plots.
+x_lab = '(>24ft / <8ft)' # Change this too.
+x_pos = max(x_val) - 0.1*max(x_val)
+ggplot(rating_data, aes(x_val, OFFRTG)) +
+  geom_point() +
+  xlab(x_lab) +
+  ggtitle(paste('Offensive Rating vs.', x_lab, ' Shot Usage %')) +
+  theme(plot.title = element_text(size=16, lineheight=.8, face="bold", hjust=0.5)) +
+  geom_smooth(method = "glm", se = TRUE) + 
+  geom_text(x = x_pos, y = y_pos, size=8, color='red', label = lm_eqn(x_val, rating_data$OFFRTG), parse = TRUE)
+
+
+x_val = rating_data$X24..feet.usage../rating_data$X8.16.feet.usage.. # Change this value for other plots.
+x_lab = '(>24ft / 8-16ft)' # Change this too.
+x_pos = max(x_val) - 0.1*max(x_val)
+ggplot(rating_data, aes(x_val, OFFRTG)) +
+  geom_point() +
+  xlab(x_lab) +
+  ggtitle(paste('Offensive Rating vs.', x_lab, ' Shot Usage %')) +
+  theme(plot.title = element_text(size=16, lineheight=.8, face="bold", hjust=0.5)) +
+  geom_smooth(method = "glm", se = TRUE) + 
+  geom_text(x = x_pos, y = y_pos, size=8, color='red', label = lm_eqn(x_val, rating_data$OFFRTG), parse = TRUE)
+
+
+x_val = rating_data$X24..feet.usage../rating_data$X16.24.feet.usage.. # Change this value for other plots.
+x_lab = '(>24ft / 16-24ft)' # Change this too.
+x_pos = max(x_val) - 0.1*max(x_val)
+ggplot(rating_data, aes(x_val, OFFRTG)) +
+  geom_point() +
+  xlab(x_lab) +
+  ggtitle(paste('Offensive Rating vs.', x_lab, ' Shot Usage %')) +
+  theme(plot.title = element_text(size=16, lineheight=.8, face="bold", hjust=0.5)) +
+  geom_smooth(method = "glm", se = TRUE) + 
+  geom_text(x = x_pos, y = y_pos, size=8, color='red', label = lm_eqn(x_val, rating_data$OFFRTG), parse = TRUE)
+
+
+### TEMP: shot ratio vs offensive rating. Not much insight here.
+# ggplot(rating_data, aes(X16.24.feet.usage../X8.16.feet.usage.., OFFRTG)) +
+#   geom_point() +
+#   geom_smooth(method = "glm", se = TRUE)
+# 
+# ggplot(rating_data, aes(X16.24.feet.usage../Less.than.8ft..usage.., OFFRTG)) +
+#   geom_point() +
+#   geom_smooth(method = "glm", se = TRUE)
+# 
+# ggplot(rating_data, aes(X8.16.feet.usage../Less.than.8ft..usage.., OFFRTG)) +
+#   geom_point() +
+#   geom_smooth(method = "glm", se = TRUE)
+
+
+### Making new features: ratio between different shot distance %
+rating_data$ratio_24_0ft = rating_data$X24..feet.usage../rating_data$Less.than.8ft..usage..
+rating_data$ratio_24_8ft = rating_data$X24..feet.usage../rating_data$X8.16.feet.usage..
+rating_data$ratio_24_16ft = rating_data$X24..feet.usage../rating_data$X16.24.feet.usage..
+rating_data$ratio_16_0ft = rating_data$X16.24.feet.usage../rating_data$Less.than.8ft..usage..
+rating_data$ratio_16_8ft = rating_data$X16.24.feet.usage../rating_data$X8.16.feet.usage..
+rating_data$ratio_8_0ft = rating_data$X8.16.feet.usage../rating_data$Less.than.8ft..usage..
+
+### Clean anomaly from 'ratio_24_8ft' & 'ratio_24_16ft'.
+cleaned_rating_data = rating_data[rating_data$ratio_24_8ft <= 2.5 & rating_data$ratio_24_16ft <= 2, ]
+
+### TEMP
+### Plot again the Shot Distance Ratio vs.Offensive Rating
+print((lm(cleaned_rating_data$OFFRTG ~ cleaned_rating_data$ratio_24_8ft)))
+x_val = cleaned_rating_data$ratio_24_8ft # Change this value for other plots.
+x_lab = '(>24ft / 8-16ft)' # Change this too.
+x_pos = max(x_val) - 0.1*max(x_val)
+ggplot(cleaned_rating_data, aes(x_val, OFFRTG)) +
+  geom_point() +
+  xlab(x_lab) +
+  ggtitle(paste('Offensive Rating vs.', x_lab, ' Shot Usage %')) +
+  theme(plot.title = element_text(size=16, lineheight=.8, face="bold", hjust=0.5)) +
+  geom_smooth(method = "glm", se = TRUE) + 
+  geom_text(x = x_pos, y = y_pos, size=8, color='red', label = lm_eqn(x_val, cleaned_rating_data$OFFRTG), parse = TRUE)
+
+
+print((lm(cleaned_rating_data$OFFRTG ~ cleaned_rating_data$ratio_24_16ft)))
+x_val = cleaned_rating_data$ratio_24_16ft # Change this value for other plots.
+x_lab = '(>24ft / 16-24ft)' # Change this too.
+x_pos = max(x_val) - 0.1*max(x_val)
+ggplot(cleaned_rating_data, aes(x_val, OFFRTG)) +
+  geom_point() +
+  xlab(x_lab) +
+  ggtitle(paste('Offensive Rating vs.', x_lab, ' Shot Usage %')) +
+  theme(plot.title = element_text(size=16, lineheight=.8, face="bold", hjust=0.5)) +
+  geom_smooth(method = "glm", se = TRUE) + 
+  geom_text(x = x_pos, y = y_pos, size=8, color='red', label = lm_eqn(x_val, cleaned_rating_data$OFFRTG), parse = TRUE)
+
+
 ## 1.2) Multivariate Linear Regression for Offensive Rating
-model_x = data.frame(rating_data$Less.than.8ft..usage..,
-                     rating_data$X8.16.feet.usage..,
-                     rating_data$X16.24.feet.usage..,
-                     rating_data$X24..feet.usage..)
-fit = lm(rating_data$OFFRTG~., data=model_x)
+model_x = data.frame(cleaned_rating_data$ratio_24_0ft,
+                     cleaned_rating_data$ratio_24_8ft, 
+                     cleaned_rating_data$ratio_24_16ft,
+                     # cleaned_rating_data$ratio_16_0ft,
+                     # cleaned_rating_data$ratio_16_8ft,
+                     # cleaned_rating_data$ratio_8_0ft,
+                     cleaned_rating_data$Less.than.8ft..usage.., 
+                     cleaned_rating_data$X8.16.feet.usage.., 
+                     cleaned_rating_data$X16.24.feet.usage.., 
+                     cleaned_rating_data$X24..feet.usage..)
+fit = lm(cleaned_rating_data$OFFRTG~., data=model_x)
+# summary(fit)
+# coef(fit)
 
-
-
-# # 2) More Advanced Plots
-# ## 2.3) Plot Shot Comb Ratio vs Offensive Rating
-# ggplot(rating_data, aes((X24..feet.usage../Less.than.8ft..usage..), OFFRTG)) + 
-#   geom_point() + 
-#   geom_smooth(method = "auto", se = TRUE)
-# 
-# ggplot(rating_data, aes(X24..feet.usage../X8.16.feet.usage.., OFFRTG)) + 
-#   geom_point() + 
-#   geom_smooth(method = "auto", se = TRUE)
-# 
-# ggplot(rating_data, aes(X24..feet.usage../X16.24.feet.usage.., OFFRTG)) + 
-#   geom_point() + 
-#   geom_smooth(method = "auto", se = TRUE)
 
 
 server <- function(input, output, session) {
@@ -88,6 +217,7 @@ server <- function(input, output, session) {
                   '16-24ft' = data.frame(rating_data$X16.24.feet.usage..),
                   '> 24ft' = data.frame(rating_data$X24..feet.usage..)
     )
+    
     ggplot(rating_data, aes(data, OFFRTG)) +
       geom_point() +
       xlab(input$distance) +
@@ -125,90 +255,76 @@ server <- function(input, output, session) {
     sliderInput("slider4", label="> 24ft Shot Usage (%): ", min=0, max=50, value=50 - (input$slider3))
   })
   output$pred_rtg <- renderText({
+    paste('Click submit to see your prediction!')
+  })
+  
+  ntext <- eventReactive(input$predict, {
     new = data.frame(rating_data.Less.than.8ft..usage.. = input$slider1,
                      rating_data.X8.16.feet.usage.. = input$slider2,
                      rating_data.X16.24.feet.usage.. = input$slider3,
                      rating_data.X24..feet.usage.. = input$slider4)
-    paste('Predicted Offensive Rating: ', predict(fit, new))
-  })
-  ndata <- eventReactive(input$predict, {
-    data.frame(rating_data.Less.than.8ft..usage.. = input$slider1,
-               rating_data.X8.16.feet.usage.. = input$slider2,
-               rating_data.X16.24.feet.usage.. = input$slider3,
-               rating_data.X24..feet.usage.. = input$slider4)
-  })
-  
-  ntext <- eventReactive(input$predict, {
     paste('< 8ft shot usage: ', input$slider1,  '%', '\n', 
           '8-16ft shot usage: ', 50-input$slider1, '%', '\n',
           '16-24ft shot usage: ', input$slider3,  '%', '\n',
-          '> 24ft shot usage: ', 50-input$slider3, '%')
+          '> 24ft shot usage: ', 50-input$slider3, '%', '\n',
+          'Predicted Offensive Rating: ', predict(fit, new))
   })
   output$nText <- renderText({
     ntext()
   })
+  
+  
+  values <- reactiveValues()
+  values$df <- 1
+  values$pred <- 115.0
+  values$zero <- 0
+  values$eight <- 0
+  values$sixteen <- 0
+  values$twentyfour <- 0
+  
+  addData <- observeEvent(input$predict, {
+    # your action button condition
+    new = data.frame(rating_data.Less.than.8ft..usage.. = input$slider1,
+                     rating_data.X8.16.feet.usage.. = input$slider2,
+                     rating_data.X16.24.feet.usage.. = input$slider3,
+                     rating_data.X24..feet.usage.. = input$slider4)
+    
+    # create the new line to be added from your inputs
+    newLine <- isolate(data.frame(df=tail(values$df, 1) + 1, 
+                                  pred=predict(fit, new), 
+                                  zero=input$slider1, 
+                                  eight=input$slider2, 
+                                  sixteen=input$slider3, 
+                                  twentyfour=input$slider4
+                                  )
+                       )
+    
+    # update your data
+    tryCatch({
+      isolate(values$df <- rbind(values$df, newLine$df))
+      isolate(values$pred <- rbind(values$pred, newLine$pred))
+      isolate(values$zero <- rbind(values$zero, newLine$zero))
+      isolate(values$eight <- rbind(values$eight, newLine$eight))
+      isolate(values$sixteen <- rbind(values$sixteen, newLine$sixteen))
+      isolate(values$twentyfour <- rbind(values$twentyfour, newLine$twentyfour))
+    }, 
+      error = function(e) {
+        print(paste('The error is: ', e))
+      }
+    )
+  })
+
+  output$pred_plot <- renderPlot({
+    plot(x=values$df, y=values$pred, ylim=c(85, 120), 
+         col = 'red', 
+         xlab = 'Trials', 
+         ylab = 'Predicted Offensive Rating', 
+         main = 'Predict Offensive Rating Based On Shot Distance Usage (%)')
+    text(values$df, 
+         values$pred, 
+         labels=paste('(', values$zero, ',', values$eight, ',', values$sixteen, ',', values$twentyfour, ')'), 
+         cex=0.7, 
+         pos=1)
+  })
 }
 
-
-
-
-
-# # Make a counter here.
-# values <- reactiveValues(i = 1)
-# observe({
-#   input$predict
-#   isolate({
-#     values$i <- rbind(values$i + 1)
-#   })
-# })
-# 
-# # output$ <- renderText({
-# #   paste0("i = ", values$i)
-# # })
-# output$pred_plot <- renderPlot({
-#   new = data.frame(rating_data.Less.than.8ft..usage.. = input$slider1,
-#                    rating_data.X8.16.feet.usage.. = input$slider2,
-#                    rating_data.X16.24.feet.usage.. = input$slider3,
-#                    rating_data.X24..feet.usage.. = input$slider4)
-#   plot(x=values$i, y=predict(fit, new))
-# })
-
-
-
-
-
-# ### 3D Plots.
-# fit_1 = lm(data = rating_data, 
-#            OFFRTG ~ X24..feet.usage.. + Less.than.8ft..usage..)
-# 
-# #Setup Axis
-# graph_reso <- 0.05
-# axis_x <- seq(min(rating_data$Less.than.8ft..usage..), max(rating_data$Less.than.8ft..usage..), by = graph_reso)
-# axis_y <- seq(min(rating_data$X24..feet.usage..), max(rating_data$X24..feet.usage..), by = graph_reso)
-# 
-# #Sample points
-# lm_surface <- expand.grid(Less.than.8ft..usage.. = axis_x, 
-#                           X24..feet.usage.. = axis_y, 
-#                           KEEP.OUT.ATTRS = F)
-# lm_surface$OFFRTG <- predict.lm(fit_1, newdata=lm_surface, se=TRUE)
-# lm_surface <- acast(lm_surface, Less.than.8ft..usage.. ~ X24..feet.usage.., value.var = "OFFRTG")
-# 
-# p <- plot_ly(rating_data, 
-#              x = ~Less.than.8ft..usage.., 
-#              y = ~X24..feet.usage.., 
-#              z = ~OFFRTG, 
-#              type = 'scatter3d', 
-#              mode = 'markers', 
-#              marker = list(color = hcolors)) %>%
-#   add_markers() %>%
-#   layout(scene = list(xaxis = list(title = '<8ft'),
-#                       yaxis = list(title = '>24ft'),
-#                       zaxis = list(title = 'Off Rtg.')))
-# 
-# p %>% add_trace(z = lm_surface, 
-#                 type = "surface")
-# 
-# p_2 <- plot_ly(z = lm_surface, 
-#                x = axis_x, 
-#                y = axis_y) %>% add_surface()
-# p_2

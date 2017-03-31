@@ -45,12 +45,14 @@ ui <- dashboardPage(
           actionButton('predict', 'Submit Your Input')
         ),
         box(
-          h2(textOutput('pred_rtg')),
+          h4(textOutput('pred_rtg')),
           verbatimTextOutput('nText')
+        ),
+        box(
+          plotOutput('pred_plot', height = '300px')
         )
       )
     )
   )
 )
 
-# ,plotOutput('pred_plot')
